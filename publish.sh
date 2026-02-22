@@ -15,7 +15,7 @@ VAULT_BLOG_DIR="${VAULT_ROOT}/BLOG"
 VAULT_TAGS_MD="${VAULT_ROOT}/tags.md"
 
 # Public repo paths (this repo)
-PUBLIC_REPO_DIR="$(pwd)"
+PUBLIC_REPO_DIR="${PUBLIC_REPO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 PUBLIC_BLOG_DIR="${PUBLIC_REPO_DIR}/BLOG"
 PUBLIC_TAGS_MD="${PUBLIC_REPO_DIR}/tags.md"
 
