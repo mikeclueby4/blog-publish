@@ -16,6 +16,37 @@ Design goals:
 
 ---
 
+# Current Implementation Status
+
+## Done
+
+- `publish.sh` — export + build + push orchestrator with draft guardrails
+- `preview.sh` / `preview.bat` — live preview from vault (drafts included, nothing committed)
+- `astro-blog/` — Astro 5.x static site, wired to content:
+  - `src/content.config.ts` — `blog` collection via `glob()` loader; `CONTENT_DIR` env var controls source path
+  - `src/pages/index.astro` — post listing with preview-mode draft visibility
+  - `src/pages/[slug]/index.astro` — per-post page with rendered Markdown
+  - `src/pages/[slug]/index.md.ts` — Markdown mirror endpoint (`/<slug>/index.md`)
+  - `src/pages/tags/[tag]/index.astro` — per-tag index pages
+  - `src/pages/rss.xml.ts` — RSS feed
+  - `@astrojs/sitemap` — auto-generates `sitemap.xml` from static routes
+  - `src/layouts/Layout.astro` — SEO head (meta, OG, canonical, robots, RSS autodiscovery)
+- `llms.txt` — generated during publish
+
+## Not Done Yet
+
+- **Styling** — current styles are minimal/functional placeholders; no design system, no typography polish, no dark/light theming
+- **Integrations** — no syntax highlighting (Shiki config), no reading time, no prev/next post nav
+- Frontmatter validation script (pre-publish lint)
+- Automated syndication to Hashnode
+- Content linting (dead links, missing og images)
+- `llms-full.txt` generation (recent posts only)
+- Sitemap validation during publish
+- Search index (static)
+- No posts in `BLOG/` yet — vault frontmatter still being massaged
+
+---
+
 # High-Level Architecture
 
 ## Repositories
@@ -34,6 +65,8 @@ Design goals:
   - `BLOG/` (exported, publishable posts only)
   - `llms.txt` (generated during publish)
   - `publish.sh` (export + build + push orchestrator)
+  - `preview.sh` (live preview from vault, drafts included)
+  - `preview.bat` (Windows trigger for preview.sh)
 
 Cloudflare Pages builds from this repo.
 
@@ -84,6 +117,7 @@ updated:
 - Default umbrella tag: `security`.
 - `slug` must match folder name.
 - `canonical` must match final URL.
+- Files matching `Untitled*` are silently ignored by the content loader (covers Obsidian scratch files).
 
 ---
 
@@ -106,9 +140,11 @@ updated:
 5. Run `npm run build` inside `astro-blog/`.
 6. Commit and push changes.
 
+`PUBLIC_REPO_DIR` is derived from the location of `publish.sh` (`BASH_SOURCE[0]`), not `$PWD`. Can be overridden via env var.
+
 ## Guardrails
 
-- Hard fail if `draft: true` exists in public repo.
+- Hard fail if `draft: true` exists in public repo after export.
 - Warn (do not delete) if stale folders exist.
 - Build failure blocks deploy.
 
@@ -116,9 +152,44 @@ Cloudflare deploys on push.
 
 ---
 
+# Preview Flow
+
+## Purpose
+
+View any vault post — including drafts — rendered by Astro before committing anything.
+
+## Trigger
+
+`preview.bat` (Windows vault root) or directly:
+
+```sh
+VAULT_ROOT=/mnt/c/path/to/vault ~/blog-publish/preview.sh
+# or
+~/blog-publish/preview.sh /mnt/c/path/to/vault
+```
+
+## How it works
+
+- Sets `CONTENT_DIR=$VAULT_ROOT/BLOG` — Astro reads directly from the live vault.
+- Sets `ASTRO_PREVIEW=true` — disables draft filter; shows all posts with a visible draft banner.
+- Runs `npm run dev` inside `astro-blog/`.
+- Does NOT write to `BLOG/`, does NOT commit, does NOT push.
+
+## Key env vars
+
+| Variable | Where used | Purpose |
+|---|---|---|
+| `VAULT_ROOT` | `publish.sh`, `preview.sh` | Path to Obsidian vault root |
+| `PUBLIC_REPO_DIR` | `publish.sh` | Path to this repo (defaults to script dir) |
+| `CONTENT_DIR` | `astro-blog/src/content.config.ts` | Path to `BLOG/` directory fed to glob loader |
+| `ASTRO_PREVIEW` | Astro pages | `"true"` enables draft visibility |
+
+---
+
 # Astro Design Principles
 
 - `astro-blog/` contains the static site project.
+- Node version: `22.x` (via nvm, `.nvmrc` at repo root).
 - Output mode: static.
 - No islands by default.
 - No runtime backend.
@@ -126,6 +197,30 @@ Cloudflare deploys on push.
 - No unnecessary client-side JS.
 
 Interactivity should only be added when clearly justified.
+
+---
+
+# Astro Site Structure
+
+```
+astro-blog/
+  astro.config.mjs         # site URL, sitemap integration
+  src/
+    content.config.ts      # blog collection, CONTENT_DIR-aware glob loader
+    layouts/
+      Layout.astro         # SEO head, OG tags, canonical, RSS autodiscovery
+    pages/
+      index.astro          # post listing (respects ASTRO_PREVIEW draft filter)
+      rss.xml.ts           # RSS feed
+      [slug]/
+        index.astro        # per-post page + draft banner in preview mode
+        index.md.ts        # Markdown mirror endpoint (draft:false only)
+      tags/
+        [tag]/
+          index.astro      # per-tag post listing
+```
+
+Content source path is controlled by `CONTENT_DIR` env var (default: `../BLOG` relative to `astro-blog/`). This is the only mechanism needed to switch between production content and live vault preview.
 
 ---
 
@@ -153,18 +248,17 @@ Each post has:
 ```
 
 These:
-- May contain minimal frontmatter.
+- Served via Astro endpoint (not a literal `.md` file) to avoid double-processing.
+- Draft posts are never served at this endpoint.
 - Should remain structurally stable.
 - Must match HTML content semantically.
 
 ## RSS + Sitemap
 
 - `rss.xml` for incremental discovery.
-- `sitemap.xml` for full URL enumeration.
+- `sitemap.xml` auto-generated by `@astrojs/sitemap` from all static routes.
 
 These remain the primary discovery mechanisms.
-
-Cloudflare AI Index or similar features may be enabled later but are not assumed.
 
 ---
 
@@ -180,16 +274,15 @@ Cloudflare AI Index or similar features may be enabled later but are not assumed
 
 # Future Roadmap
 
-Potential additions:
-
-- RSS auto-generation from frontmatter.
-- Sitemap validation during publish.
-- Validation script to enforce frontmatter schema.
-- Minimal metadata stripping for Markdown mirrors.
-- Automated syndication to Hashnode.
-- Optional search index (static).
-- Content linting (dead links, missing og images).
-- `llms-full.txt` generation (recent posts only).
+- Styling / design pass (typography, spacing, code blocks, dark theme)
+- Syntax highlighting configuration (Shiki themes)
+- Frontmatter validation script (pre-publish lint, enforce schema)
+- Content linting (dead links, missing og images)
+- `llms-full.txt` generation (recent posts only)
+- Sitemap validation during publish
+- Automated syndication to Hashnode
+- Optional static search index
+- Reading time + prev/next post navigation
 
 ---
 
@@ -211,6 +304,7 @@ Potential additions:
 - HTML and Markdown mirrors remain in sync.
 - Agents can discover content via llms.txt, RSS, and sitemap.
 - Vault and public repo remain cleanly separated.
+- Preview of any post (including drafts) is possible without touching the public repo.
 
 ---
 

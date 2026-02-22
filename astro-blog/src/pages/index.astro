@@ -1,0 +1,87 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+
+const isPreview = import.meta.env.ASTRO_PREVIEW === 'true';
+
+const posts = (await getCollection('blog', ({ data }) => {
+  if (isPreview) return true;
+  return data.draft === false;
+})).sort((a, b) => {
+  const aDate = a.data.date?.getTime() ?? 0;
+  const bDate = b.data.date?.getTime() ?? 0;
+  return bDate - aDate;
+});
+---
+
+<Layout
+  title="Privileged Contexts"
+  description="Personal technical blog focused on security, detection/response, and secure use of AI/agentic tooling."
+>
+  <main>
+    <header>
+      <h1>Privileged Contexts</h1>
+      <p>Security · Detection &amp; Response · AI/Agentic tooling</p>
+    </header>
+    {isPreview && (
+      <div class="preview-banner">
+        ⚠️ Preview mode — draft posts are visible
+      </div>
+    )}
+    {posts.length === 0 && (
+      <p class="empty">No posts published yet.</p>
+    )}
+    <ul class="post-list">
+      {posts.map((post) => (
+        <li class={post.data.draft ? 'draft' : ''}>
+          <a href={`/${post.data.slug}/`}>
+            <h2>{post.data.title}{post.data.draft ? ' [DRAFT]' : ''}</h2>
+          </a>
+          {post.data.date && (
+            <time datetime={post.data.date.toISOString()}>
+              {post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </time>
+          )}
+          {post.data.description && <p>{post.data.description}</p>}
+          <ul class="tags">
+            {post.data.tags.map((tag) => (
+              <li><a href={`/tags/${tag}/`}>{tag}</a></li>
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  </main>
+</Layout>
+
+<style>
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+  header { margin-bottom: 2rem; }
+  header h1 { font-size: 2rem; margin: 0 0 0.25rem; }
+  header p { color: #94a3b8; margin: 0; }
+  .preview-banner {
+    background: #7c3aed;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+  .empty { color: #64748b; }
+  .post-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2rem; }
+  .post-list li { border-bottom: 1px solid #1e293b; padding-bottom: 2rem; }
+  .post-list li:last-child { border-bottom: none; }
+  .post-list li.draft { opacity: 0.65; border-left: 3px solid #7c3aed; padding-left: 1rem; }
+  .post-list h2 { margin: 0 0 0.25rem; font-size: 1.25rem; }
+  .post-list a { color: #e2e8f0; text-decoration: none; }
+  .post-list a:hover { text-decoration: underline; }
+  time { font-size: 0.85rem; color: #64748b; }
+  .post-list > li > p { color: #94a3b8; margin: 0.4rem 0 0.5rem; }
+  .tags { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .tags li a { font-size: 0.8rem; background: #1e293b; color: #94a3b8; padding: 0.2rem 0.5rem; border-radius: 4px; text-decoration: none; }
+  .tags li a:hover { background: #334155; }
+</style>

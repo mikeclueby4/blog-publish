@@ -1,0 +1,62 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  og_image?: string;
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  og_image,
+  noindex = false,
+} = Astro.props;
+
+const siteName = 'Privileged Contexts';
+const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{fullTitle}</title>
+
+    {description && <meta name="description" content={description} />}
+    {noindex && <meta name="robots" content="noindex,nofollow" />}
+    {canonical && <link rel="canonical" href={canonical} />}
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={fullTitle} />
+    {description && <meta property="og:description" content={description} />}
+    {og_image && <meta property="og:image" content={`https://blog.clueby4.dev${og_image}`} />}
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:type" content="website" />
+
+    <!-- RSS -->
+    <link rel="alternate" type="application/rss+xml" title={siteName} href="/rss.xml" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style>
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+    font-family: system-ui, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+  }
+</style>
