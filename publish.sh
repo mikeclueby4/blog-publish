@@ -36,6 +36,37 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || { err "Missing required command: $1"; exit 1; }
 }
 
+#
+# SAFETY CHECKS:
+#
+
+# Check that PUBLIC_REPO_DIR is not the same as VAULT_ROOT
+if [[ "$PUBLIC_REPO_DIR" == "$VAULT_ROOT" ]]; then
+  err "PUBLIC_REPO_DIR is the same as VAULT_ROOT: $PUBLIC_REPO_DIR. This is likely a misconfiguration. Please check your configuration. Aborting."
+  exit 1
+fi
+
+# Does VAULT_ROOT contain a BLOG/ folder with at least one .md file? If not, likely misconfigured and we don't want to proceed.
+if ! find "$VAULT_BLOG_DIR" -type f -name "*.md" | grep -q .; then
+  err "No markdown files found in vault BLOG/ directory: $VAULT_BLOG_DIR. Please check VAULT_ROOT configuration and ensure it points to the Obsidian vault root containing BLOG/. Aborting."
+  exit 1
+fi
+# Does VAULT_ROOT contain .obsidian/ folder? If not, likely misconfigured and we don't want to proceed.
+if [[ ! -d "${VAULT_ROOT}/.obsidian" ]]; then
+  err "No .obsidian/ folder found in vault root: $VAULT_ROOT. Please check VAULT_ROOT configuration and ensure it points to the Obsidian vault root. Aborting."
+  exit 1
+fi
+# Does PUBLIC_REPO_DIR contain a .git/ folder? If not, likely misconfigured and we don't want to proceed.
+if [[ ! -d "${PUBLIC_REPO_DIR}/.git" ]]; then
+  err "No .git/ folder found in public repo root: $PUBLIC_REPO_DIR. Please check that you are running this script from the root of the public git repository. Aborting."
+  exit 1
+fi
+
+#
+# ---------- Helpers ----------
+#
+
+
 # Return 0 if the file contains frontmatter with a line exactly: draft: false
 is_publishable_md() {
   local md="$1"
@@ -160,7 +191,7 @@ done
 # ---------- Build & push ----------
 # Your package.json should make build fail if validations fail.
 info "Running build (this will gate Cloudflare deploys too)..."
-npm run build
+( cd astro-blog && npm run build )
 
 # Summaries before git operations
 info "Export summary:"
@@ -184,18 +215,6 @@ if (( ${#stale[@]} > 0 )); then
   printf '    - %s\n' "${stale[@]}" >&2
 fi
 
-# Commit/push (optional; comment out if you prefer manual)
-info "Committing & pushing public repo..."
-git add -A
-# Don't fail if there are no changes
-if git diff --cached --quiet; then
-  info "No changes to commit."
-else
-  git commit -m "Publish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-fi
-
-git push
-info "Done."
 
 
 # llms.txt (place at site root; served as /llms.txt)
@@ -253,3 +272,22 @@ LLMSTXT
 # date:
 # updated:
 # ---
+
+
+
+
+# Commit/push (optional; comment out if you prefer manual)
+info "Committing & pushing public repo..."
+git add -A
+# Don't fail if there are no changes
+if git diff --cached --quiet; then
+  info "No changes to commit."
+else
+  git commit -m "Publish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+fi
+
+# wait for enter key to push, as a final confirmation step
+read -p "Press Enter to push to remote (or Ctrl+C to abort)..."
+
+git push
+info "Done."
