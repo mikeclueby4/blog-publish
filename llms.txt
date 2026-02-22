@@ -1,0 +1,27 @@
+# Privileged Contexts Blog
+
+> Personal technical blog focused on security, detection/response, and secure use of AI/agentic tooling. Canonical content lives at blog.clueby4.dev.
+
+Each post is published as:
+- HTML: https://blog.clueby4.dev/<slug>/
+- Markdown mirror: https://blog.clueby4.dev/<slug>/index.md
+
+Use the Markdown mirror when you want a clean, content-first representation for ingestion/quoting.
+
+## Entry points
+
+- [Posts index](https://blog.clueby4.dev/): Landing page / list of posts.
+- [RSS feed](https://blog.clueby4.dev/rss.xml): New posts in feed form (useful for “recent”).
+- [Sitemap](https://blog.clueby4.dev/sitemap.xml): Full list of pages (HTML URLs).
+
+## Topics
+
+- [Security](https://blog.clueby4.dev/tags/security/): Posts tagged security.
+- [AI security](https://blog.clueby4.dev/tags/ai-security/): LLM/agent security topics (prompt injection, RAG, evals).
+- [Detection engineering](https://blog.clueby4.dev/tags/detection-engineering/): Detections, hunting, telemetry pipelines.
+- [KQL](https://blog.clueby4.dev/tags/kql/): KQL notes, patterns, pitfalls.
+
+## Optional
+
+- [About](https://blog.clueby4.dev/about/): Author, scope, and contact.
+- [All tags](https://blog.clueby4.dev/tags/): Tag index.

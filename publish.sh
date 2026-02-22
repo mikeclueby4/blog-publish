@@ -274,6 +274,8 @@ LLMSTXT
 # ---
 
 
+# wait for enter key to push, as a final confirmation step
+read -p "Press Enter to stage and commit (or Ctrl+C to abort)..."
 
 
 # Commit/push (optional; comment out if you prefer manual)
