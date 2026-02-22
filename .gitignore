@@ -19,7 +19,7 @@ package-lock.json
 # Things from AstroPaper and Astro in general that we don't want to track
 astro-blog/.github/
 astro-blog/public/pagefind/
-astro-blog/src/assets/images
+
 
 # Legacy scratch directory (kept on disk for reference, not published)
 astro-blog-old/
