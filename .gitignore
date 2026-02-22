@@ -1,0 +1,25 @@
+# OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE (personal config, not shared)
+.vscode/
+.idea/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Accidental root-level npm/node artifacts
+node_modules/
+package-lock.json
+
+# Things from AstroPaper and Astro in general that we don't want to track
+astro-blog/.github/
+astro-blog/public/pagefind/
+astro-blog/src/assets/images
+
+# Legacy scratch directory (kept on disk for reference, not published)
+astro-blog-old/

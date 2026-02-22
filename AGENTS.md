@@ -22,27 +22,32 @@ Design goals:
 
 - `publish.sh` — export + build + push orchestrator with draft guardrails
 - `preview.sh` / `preview.bat` — live preview from vault (drafts included, nothing committed)
-- `astro-blog/` — Astro 5.x static site, wired to content:
+- `astro-blog/` — Astro 5.x static site based on **AstroPaper** theme (v5.5.1) — see `AstroPaper-upstream-instructions.md` for the full delta and upgrade procedure:
+  - **Theme**: AstroPaper — Tailwind CSS v4, dark/light mode (auto + toggle), accessible, responsive
+  - **Syntax highlighting**: Shiki with `min-light` / `night-owl` themes, diff/highlight/filename transformers
+  - **Prev/Next post navigation**: built into `PostDetails.astro`
+  - **Pagefind** static search (postbuild step, no runtime server)
+  - **Sticky ToC sidebar**: two-column layout on post pages (h2/h3 headings, collapses on mobile)
   - `src/content.config.ts` — `blog` collection via `glob()` loader; `CONTENT_DIR` env var controls source path
   - `src/pages/index.astro` — post listing with preview-mode draft visibility
-  - `src/pages/[slug]/index.astro` — per-post page with rendered Markdown
+  - `src/pages/[slug]/index.astro` — per-post page (flat URL, not `/posts/[slug]/`)
   - `src/pages/[slug]/index.md.ts` — Markdown mirror endpoint (`/<slug>/index.md`)
-  - `src/pages/tags/[tag]/index.astro` — per-tag index pages
+  - `src/pages/tags/[tag]/[...page].astro` — per-tag index pages with pagination
+  - `src/pages/posts/[...page].astro` — paginated post listing
+  - `src/pages/archives/index.astro` — chronological archive
   - `src/pages/rss.xml.ts` — RSS feed
   - `@astrojs/sitemap` — auto-generates `sitemap.xml` from static routes
-  - `src/layouts/Layout.astro` — SEO head (meta, OG, canonical, robots, RSS autodiscovery)
+  - `src/layouts/Layout.astro` — SEO head (meta, OG, canonical, robots, RSS autodiscovery, JSON-LD structured data)
+  - `src/layouts/PostDetails.astro` — post layout with ToC, prev/next, share links, progress bar
 - `llms.txt` — generated during publish
 
 ## Not Done Yet
 
-- **Styling** — current styles are minimal/functional placeholders; no design system, no typography polish, no dark/light theming
-- **Integrations** — no syntax highlighting (Shiki config), no reading time, no prev/next post nav
 - Frontmatter validation script (pre-publish lint)
 - Automated syndication to Hashnode
 - Content linting (dead links, missing og images)
 - `llms-full.txt` generation (recent posts only)
 - Sitemap validation during publish
-- Search index (static)
 - No posts in `BLOG/` yet — vault frontmatter still being massaged
 
 ---
@@ -202,25 +207,57 @@ Interactivity should only be added when clearly justified.
 
 # Astro Site Structure
 
+Based on **AstroPaper** theme (github.com/satnaing/astro-paper), customised for this site.
+
 ```
 astro-blog/
-  astro.config.mjs         # site URL, sitemap integration
+  astro.config.ts          # site URL, sitemap, Shiki, Tailwind v4
   src/
+    config.ts              # SITE config (title, author, OG, theme toggle, etc.)
+    constants.ts           # social links
     content.config.ts      # blog collection, CONTENT_DIR-aware glob loader
     layouts/
-      Layout.astro         # SEO head, OG tags, canonical, RSS autodiscovery
+      Layout.astro         # SEO head, OG, canonical, JSON-LD, RSS autodiscovery, theme
+      PostDetails.astro    # post layout: ToC sidebar, prev/next, share, progress bar
+      Main.astro           # generic page layout wrapper
+      AboutLayout.astro    # about page layout
     pages/
-      index.astro          # post listing (respects BLOG_PREVIEW draft filter)
+      index.astro          # home page (respects BLOG_PREVIEW draft filter)
+      about.md             # about page
+      search.astro         # Pagefind search UI
       rss.xml.ts           # RSS feed
+      robots.txt.ts        # robots.txt
       [slug]/
         index.astro        # per-post page + draft banner in preview mode
         index.md.ts        # Markdown mirror endpoint (draft:false only)
+      posts/
+        [...page].astro    # paginated post listing
       tags/
         [tag]/
-          index.astro      # per-tag post listing
+          [...page].astro  # per-tag post listing with pagination
+      archives/
+        index.astro         # chronological archive
+    components/             # Header, Footer, Card, Datetime, Tag, Pagination, etc.
+    utils/                  # getPath, getSortedPosts, postFilter, slugify, etc.
+    styles/
+      global.css            # Tailwind v4 theme (CSS custom properties for light/dark)
+      typography.css        # prose/typography styles
+    scripts/
+      theme.ts              # dark/light mode logic
 ```
 
-Content source path is controlled by `CONTENT_DIR` env var (default: `../BLOG` relative to `astro-blog/`). This is the only mechanism needed to switch between production content and live vault preview.
+Content source path is controlled by `CONTENT_DIR` env var (default: `../../BLOG` relative to `src/`). This is the only mechanism needed to switch between production content and live vault preview.
+
+## Key Customisations from Stock AstroPaper
+
+- **URL routing**: Posts at `/<slug>/` (not `/posts/<slug>/`)
+- **Frontmatter schema**: Uses vault schema (`date`/`updated`/`slug`/`canonical`/`og_image`/`seo_title`/`noindex`) instead of AstroPaper's (`pubDatetime`/`modDatetime`/`canonicalURL`/etc.)
+- **Content source**: `CONTENT_DIR` env var + vault-aware glob pattern (`*/*.md`)
+- **Draft handling**: `BLOG_PREVIEW` env var for preview mode with visible draft banners
+- **Markdown mirror**: `/<slug>/index.md` endpoint for agent/LLM ingestion
+- **Sticky ToC sidebar**: Two-column CSS grid layout on post pages
+- **Dynamic OG disabled**: Uses explicit `og_image` frontmatter field
+- **Edit post disabled**: No public GitHub source for posts
 
 ---
 
@@ -268,21 +305,20 @@ These remain the primary discovery mechanisms.
 - No dynamic runtime.
 - No server-side user state.
 - No comments system (Hashnode may host discussion separately).
-- No platform lock-in.
+- No platform lock-in. 
 
 ---
 
 # Future Roadmap
 
-- Styling / design pass (typography, spacing, code blocks, dark theme)
-- Syntax highlighting configuration (Shiki themes)
 - Frontmatter validation script (pre-publish lint, enforce schema)
 - Content linting (dead links, missing og images)
 - `llms-full.txt` generation (recent posts only)
 - Sitemap validation during publish
 - Automated syndication to Hashnode
-- Optional static search index
-- Reading time + prev/next post navigation
+- Reading time display
+- Colour scheme customisation (current: AstroPaper defaults)
+- Integration with "AI index" platforms (e.g. https://www.pinecone.io/ai-indexing/, cloudflare's AI search, etc.) without compromising the static site output or content model
 
 ---
 
@@ -305,6 +341,7 @@ These remain the primary discovery mechanisms.
 - Agents can discover content via llms.txt, RSS, and sitemap.
 - Vault and public repo remain cleanly separated.
 - Preview of any post (including drafts) is possible without touching the public repo.
+- Fallback to basic MD->HTML generation and hosting on any static platform ALWAYS HAS TO REMAIN possible.
 
 ---
 

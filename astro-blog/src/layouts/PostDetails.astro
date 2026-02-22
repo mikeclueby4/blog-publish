@@ -1,0 +1,369 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Tag from "@/components/Tag.astro";
+import Datetime from "@/components/Datetime.astro";
+import ShareLinks from "@/components/ShareLinks.astro";
+import BackButton from "@/components/BackButton.astro";
+import BackToTopButton from "@/components/BackToTopButton.astro";
+import { getPostSlug } from "@/utils/getPath";
+import { slugifyStr } from "@/utils/slugify";
+import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
+import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
+import { SITE } from "@/config";
+
+type Props = {
+  post: CollectionEntry<"blog">;
+  posts: CollectionEntry<"blog">[];
+};
+
+const { post, posts } = Astro.props;
+
+const isPreview = process.env.BLOG_PREVIEW === "true";
+
+const {
+  title,
+  seo_title,
+  description,
+  og_image,
+  canonical,
+  date,
+  updated,
+  tags,
+  noindex,
+  draft,
+  slug,
+} = post.data;
+
+const { Content, headings } = await render(post);
+
+// OG image resolution
+const ogImage = og_image
+  ? new URL(og_image, Astro.url.origin).href
+  : undefined;
+
+const layoutProps = {
+  title: `${seo_title ?? title} | ${SITE.title}`,
+  author: SITE.author,
+  description,
+  pubDatetime: date,
+  modDatetime: updated,
+  canonicalURL: canonical,
+  ogImage,
+  scrollSmooth: true,
+};
+
+/* ========== Prev/Next Posts ========== */
+
+const allPosts = posts.map(p => ({
+  slug: getPostSlug(p),
+  title: p.data.title,
+}));
+
+const currentPostIndex = allPosts.findIndex(a => a.slug === slug);
+
+const prevPost = currentPostIndex !== 0 ? allPosts[currentPostIndex - 1] : null;
+const nextPost =
+  currentPostIndex !== allPosts.length - 1
+    ? allPosts[currentPostIndex + 1]
+    : null;
+
+/* ========== ToC headings (depth 2-3) ========== */
+const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
+---
+
+<Layout {...layoutProps}>
+  <Header />
+  <BackButton />
+  <main
+    id="main-content"
+    class:list={["pb-12", { "mt-8": !SITE.showBackButton }]}
+  >
+    {draft && isPreview && (
+      <div class="mx-auto max-w-5xl px-4 mb-4">
+        <div class="rounded-md bg-purple-700 px-4 py-2 text-sm text-white">
+          ⚠️ DRAFT — this post is not published
+        </div>
+      </div>
+    )}
+
+    <div class="post-layout mx-auto max-w-5xl px-4">
+      {/* ===== Sticky ToC sidebar ===== */}
+      {tocHeadings.length > 2 && (
+        <aside class="toc-sidebar" aria-label="Table of contents">
+          <nav>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wider opacity-60">
+              Contents
+            </p>
+            <ul class="space-y-1 text-sm">
+              {tocHeadings.map(h => (
+                <li
+                  class:list={[
+                    "leading-snug",
+                    { "pl-3": h.depth === 3 },
+                  ]}
+                >
+                  <a
+                    href={`#${h.slug}`}
+                    class="block py-0.5 text-foreground/70 decoration-dashed underline-offset-4 transition-colors hover:text-accent hover:underline"
+                  >
+                    {h.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </aside>
+      )}
+
+      {/* ===== Main post content ===== */}
+      <div class="post-main" data-pagefind-body>
+        <h1
+          transition:name={slugifyStr(title.replaceAll(".", "-"))}
+          class="inline-block text-2xl font-bold text-accent sm:text-3xl"
+        >
+          {title}
+        </h1>
+        <div class="my-2 flex items-center gap-2">
+          <Datetime date={date} updated={updated} size="lg" />
+        </div>
+        <article
+          id="article"
+          class="app-prose mt-8 w-full max-w-none prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+        >
+          <Content />
+        </article>
+
+        <hr class="my-8 border-dashed" />
+
+        <ul class="mt-4 mb-8 flex flex-wrap gap-4 sm:my-8">
+          {tags.map(tag => <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />)}
+        </ul>
+
+        <BackToTopButton />
+
+        <ShareLinks />
+
+        <hr class="my-6 border-dashed" />
+
+        <!-- Previous/Next Post Buttons -->
+        <div data-pagefind-ignore class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {
+            prevPost && (
+              <a
+                href={`/${prevPost.slug}/`}
+                class="flex w-full gap-1 hover:opacity-75"
+              >
+                <IconChevronLeft class="inline-block flex-none rtl:rotate-180" />
+                <div>
+                  <span>Previous Post</span>
+                  <div class="text-sm text-accent/85">{prevPost.title}</div>
+                </div>
+              </a>
+            )
+          }
+          {
+            nextPost && (
+              <a
+                href={`/${nextPost.slug}/`}
+                class="flex w-full justify-end gap-1 text-end hover:opacity-75 sm:col-start-2"
+              >
+                <div>
+                  <span>Next Post</span>
+                  <div class="text-sm text-accent/85">{nextPost.title}</div>
+                </div>
+                <IconChevronRight class="inline-block flex-none rtl:rotate-180" />
+              </a>
+            )
+          }
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .post-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .toc-sidebar {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .post-layout {
+      grid-template-columns: 200px 1fr;
+    }
+
+    .toc-sidebar {
+      display: block;
+      position: sticky;
+      top: 5rem;
+      align-self: start;
+      max-height: calc(100vh - 6rem);
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+  }
+</style>
+
+<script is:inline data-astro-rerun>
+  /** Create a progress indicator
+   *  at the top */
+  function createProgressBar() {
+    // Create the main container div
+    const progressContainer = document.createElement("div");
+    progressContainer.className =
+      "progress-container fixed top-0 z-10 h-1 w-full bg-background";
+
+    // Create the progress bar div
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar h-1 w-0 bg-accent";
+    progressBar.id = "myBar";
+
+    // Append the progress bar to the progress container
+    progressContainer.appendChild(progressBar);
+
+    // Append the progress container to the document body or any other desired parent element
+    document.body.appendChild(progressContainer);
+  }
+  createProgressBar();
+
+  /** Update the progress bar
+   *  when user scrolls */
+  function updateScrollProgress() {
+    document.addEventListener("scroll", () => {
+      const winScroll =
+        document.body.scrollTop || document.documentElement.scrollTop;
+      const height =
+        document.documentElement.scrollHeight -
+        document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      if (document) {
+        const myBar = document.getElementById("myBar");
+        if (myBar) {
+          myBar.style.width = scrolled + "%";
+        }
+      }
+    });
+  }
+  updateScrollProgress();
+
+  /** Attaches links to headings in the document,
+   *  allowing sharing of sections easily */
+  function addHeadingLinks() {
+    const headings = Array.from(
+      document.querySelectorAll("h2, h3, h4, h5, h6")
+    );
+    for (const heading of headings) {
+      heading.classList.add("group");
+      const link = document.createElement("a");
+      link.className =
+        "heading-link ms-2 no-underline opacity-75 md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100";
+      link.href = "#" + heading.id;
+
+      const span = document.createElement("span");
+      span.ariaHidden = "true";
+      span.innerText = "#";
+      link.appendChild(span);
+      heading.appendChild(link);
+    }
+  }
+  addHeadingLinks();
+
+  /** Attaches copy buttons to code blocks in the document,
+   * allowing users to copy code easily. */
+  function attachCopyButtons() {
+    const copyButtonLabel = "Copy";
+    const codeBlocks = Array.from(document.querySelectorAll("pre"));
+
+    for (const codeBlock of codeBlocks) {
+      const wrapper = document.createElement("div");
+      wrapper.style.position = "relative";
+
+      // Check if --file-name-offset custom property exists
+      const computedStyle = getComputedStyle(codeBlock);
+      const hasFileNameOffset =
+        computedStyle.getPropertyValue("--file-name-offset").trim() !== "";
+
+      // Determine the top positioning class
+      const topClass = hasFileNameOffset
+        ? "top-(--file-name-offset)"
+        : "-top-3";
+
+      const copyButton = document.createElement("button");
+      copyButton.className = `copy-code absolute end-3 ${topClass} rounded bg-muted border border-muted px-2 py-1 text-xs leading-4 text-foreground font-medium`;
+      copyButton.innerHTML = copyButtonLabel;
+      codeBlock.setAttribute("tabindex", "0");
+      codeBlock.appendChild(copyButton);
+
+      // wrap codebock with relative parent element
+      codeBlock?.parentNode?.insertBefore(wrapper, codeBlock);
+      wrapper.appendChild(codeBlock);
+
+      copyButton.addEventListener("click", async () => {
+        await copyCode(codeBlock, copyButton);
+      });
+    }
+
+    async function copyCode(block, button) {
+      const code = block.querySelector("code");
+      const text = code?.innerText;
+
+      await navigator.clipboard.writeText(text ?? "");
+
+      // visual feedback that task is completed
+      button.innerText = "Copied";
+
+      setTimeout(() => {
+        button.innerText = copyButtonLabel;
+      }, 700);
+    }
+  }
+  attachCopyButtons();
+
+  /* Go to page start after page swap */
+  document.addEventListener("astro:after-swap", () =>
+    window.scrollTo({ left: 0, top: 0, behavior: "instant" })
+  );
+
+  /** Highlight active ToC link on scroll */
+  function initTocHighlight() {
+    const tocLinks = document.querySelectorAll(".toc-sidebar a");
+    if (tocLinks.length === 0) return;
+
+    const headings = Array.from(tocLinks).map(link => {
+      const id = link.getAttribute("href")?.slice(1);
+      return id ? document.getElementById(id) : null;
+    }).filter(Boolean);
+
+    function updateActive() {
+      let active = headings[0];
+      for (const heading of headings) {
+        if (heading && heading.getBoundingClientRect().top <= 100) {
+          active = heading;
+        }
+      }
+      tocLinks.forEach(link => {
+        const href = link.getAttribute("href");
+        if (href === "#" + active?.id) {
+          link.classList.add("text-accent", "font-medium");
+          link.classList.remove("text-foreground/70");
+        } else {
+          link.classList.remove("text-accent", "font-medium");
+          link.classList.add("text-foreground/70");
+        }
+      });
+    }
+
+    document.addEventListener("scroll", updateActive, { passive: true });
+    updateActive();
+  }
+  initTocHighlight();
+</script>

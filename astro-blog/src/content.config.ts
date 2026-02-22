@@ -1,18 +1,20 @@
-import { defineCollection, z } from 'astro:content';
-import { glob } from 'astro/loaders';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { defineCollection, z } from "astro:content";
+import { glob } from "astro/loaders";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // CONTENT_DIR env var points to a live vault BLOG/ directory in preview mode.
 // Falls back to the repo-root BLOG/ (../../BLOG relative to src/).
 const contentDir =
-  process.env.CONTENT_DIR ?? path.resolve(__dirname, '../../BLOG');
+  process.env.CONTENT_DIR ?? path.resolve(__dirname, "../../BLOG");
+
+export const BLOG_PATH = contentDir;
 
 const blog = defineCollection({
   loader: glob({
-    pattern: ['*/*.md', '!**/Untitled*'],
+    pattern: ["*/*.md", "!**/Untitled*"],
     base: contentDir,
   }),
   schema: z.object({
@@ -22,7 +24,7 @@ const blog = defineCollection({
     slug: z.string(),
     canonical: z.string().url().optional(),
     og_image: z.string().optional(),
-    tags: z.array(z.string()).default(['security']),
+    tags: z.array(z.string()).default(["security"]),
     noindex: z.boolean().default(false),
     draft: z.boolean().default(true),
     date: z.coerce.date().optional(),
