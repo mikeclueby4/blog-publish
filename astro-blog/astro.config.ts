@@ -61,12 +61,20 @@ export default defineConfig({
     preserveScriptOrder: true,
     fonts: [
       {
-        name: "Google Sans Code",
-        cssVariable: "--font-google-sans-code",
+        name: "Google Sans Flex",
+        cssVariable: "--font-google-sans-flex",
+        provider: fontProviders.google(),
+        fallbacks: ["system-ui", "sans-serif"],
+        weights: [300, 400, 500, 600, 700],
+        styles: ["normal", "italic"],
+      },
+      {
+        name: "Geist Mono",
+        cssVariable: "--font-geist-mono",
         provider: fontProviders.google(),
         fallbacks: ["monospace"],
         weights: [300, 400, 500, 600, 700],
-        styles: ["normal", "italic"],
+        styles: ["normal"],
       },
     ],
   },

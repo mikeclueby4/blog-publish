@@ -38,7 +38,10 @@ These files are **ours** — do not overwrite from upstream without re-applying 
 | `src/utils/getSortedPosts.ts` | Sort key is `date` not `pubDatetime` |
 | `src/components/Card.astro` | Uses `slug`-based hrefs, `date`/`updated` fields |
 | `src/components/Datetime.astro` | Props renamed `date`/`updated` |
-| `src/layouts/Layout.astro` | `noindex` prop, canonical passed from frontmatter |
+| `src/layouts/Layout.astro` | `noindex` prop, canonical passed from frontmatter, two `<Font>` preload tags |
+| `astro.config.ts` | `experimental.fonts`: Google Sans Flex + Geist Mono (not stock IBM Plex Mono) |
+| `src/styles/global.css` | `--font-app`, `--font-mono` variables; `body` font-size: 1.125rem |
+| `src/styles/typography.css` | `code` and `.astro-code` use `--font-mono` at `0.875em` |
 
 ---
 
@@ -161,6 +164,29 @@ Frontmatter destructuring updated throughout. Key additions:
 
 ### 15. `src/constants.ts`
 - Social links updated/cleared for this site
+
+### 16. Typography / fonts
+
+AstroPaper ships with a single `IBM Plex Mono` font applied globally. We replaced the entire font setup to match the live Hashnode site's rendering:
+
+**`astro.config.ts`** — `experimental.fonts` array replaced:
+- `IBM Plex Mono` (stock) → removed
+- Added `Google Sans Flex` → `cssVariable: --font-google-sans-flex`, provider: Google, sans-serif fallback — used for body, headings, and UI chrome
+- Added `Geist Mono` → `cssVariable: --font-geist-mono`, provider: Google, monospace fallback — used exclusively for code fences and inline code
+
+**`src/layouts/Layout.astro`** — Two `<Font>` preload tags (one per face) replacing the single original.
+
+**`src/styles/global.css`**:
+- `--font-app` CSS variable now points to `--font-google-sans-flex` (was `--font-google-sans-code`)
+- New `--font-mono` variable added pointing to `--font-geist-mono`
+- `body` gets `font-size: 1.125rem` (scales with browser/device root; ≈18px at default settings)
+
+**`src/styles/typography.css`**:
+- Inline `code` rule gains `font-family: var(--font-mono); font-size: 0.875em`
+- `.astro-code` (fenced code blocks) gains the same two rules
+- Font size expressed as `em` so it scales proportionally if surrounding prose size changes
+
+When pulling a future AstroPaper update, do **not** overwrite the fonts array in `astro.config.ts` or the font variable names in `global.css` / `typography.css`.
 
 ---
 

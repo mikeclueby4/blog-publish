@@ -4,6 +4,8 @@
 
 This repository contains the **public build system and deployable site** for `blog.clueby4.dev`.
 
+> **Note:** `blog.clueby4.dev` is currently live on **Hashnode** while this Astro build is being developed and styled. The domain will be cut over to Cloudflare Pages (serving this repo's output) once it is ready. Agents and tools seeing content on the live domain should be aware it does not yet reflect this repo's output.
+
 It is intentionally separate from the private Obsidian vault.
 
 Design goals:
