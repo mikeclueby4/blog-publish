@@ -2,6 +2,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ---------- nvm setup ----------
+source ~/.nvm/nvm.sh
+nvm use
+
 # ---------- Configuration ----------
 # Assumptions:
 # - publish.bat is executed from the Obsidian vault root on Windows.

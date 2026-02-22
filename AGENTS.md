@@ -171,7 +171,7 @@ VAULT_ROOT=/mnt/c/path/to/vault ~/blog-publish/preview.sh
 ## How it works
 
 - Sets `CONTENT_DIR=$VAULT_ROOT/BLOG` — Astro reads directly from the live vault.
-- Sets `ASTRO_PREVIEW=true` — disables draft filter; shows all posts with a visible draft banner.
+- Sets `BLOG_PREVIEW=true` — disables draft filter; shows all posts with a visible draft banner.
 - Runs `npm run dev` inside `astro-blog/`.
 - Does NOT write to `BLOG/`, does NOT commit, does NOT push.
 
@@ -182,7 +182,7 @@ VAULT_ROOT=/mnt/c/path/to/vault ~/blog-publish/preview.sh
 | `VAULT_ROOT` | `publish.sh`, `preview.sh` | Path to Obsidian vault root |
 | `PUBLIC_REPO_DIR` | `publish.sh` | Path to this repo (defaults to script dir) |
 | `CONTENT_DIR` | `astro-blog/src/content.config.ts` | Path to `BLOG/` directory fed to glob loader |
-| `ASTRO_PREVIEW` | Astro pages | `"true"` enables draft visibility |
+| `BLOG_PREVIEW` | Astro pages | `"true"` enables draft visibility |
 
 ---
 
@@ -210,7 +210,7 @@ astro-blog/
     layouts/
       Layout.astro         # SEO head, OG tags, canonical, RSS autodiscovery
     pages/
-      index.astro          # post listing (respects ASTRO_PREVIEW draft filter)
+      index.astro          # post listing (respects BLOG_PREVIEW draft filter)
       rss.xml.ts           # RSS feed
       [slug]/
         index.astro        # per-post page + draft banner in preview mode

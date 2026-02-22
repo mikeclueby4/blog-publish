@@ -4,6 +4,10 @@
 # Does NOT export to public repo, commit, or push anything.
 set -euo pipefail
 
+# ---------- nvm setup ----------
+source ~/.nvm/nvm.sh
+nvm use
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Resolve vault root: env var > positional arg > fail
@@ -30,7 +34,7 @@ echo "INFO: Nothing will be committed or pushed."
 echo ""
 
 export CONTENT_DIR="$VAULT_BLOG_DIR"
-export ASTRO_PREVIEW="true"
+export BLOG_PREVIEW="true"
 
 cd "$SCRIPT_DIR/astro-blog"
 npm run dev

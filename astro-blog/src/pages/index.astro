@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 
-const isPreview = import.meta.env.ASTRO_PREVIEW === 'true';
+const isPreview = process.env.BLOG_PREVIEW === 'true';
 
 const posts = (await getCollection('blog', ({ data }) => {
   if (isPreview) return true;
