@@ -4,6 +4,12 @@
   /* ===== Override default Tailwind Typography styles ===== */
   .app-prose {
     @apply prose;
+    letter-spacing: -0.011em;
+    line-height: 1.618;
+
+    @media (min-width: 640px) {
+      letter-spacing: -0.014em;
+    }
 
     h1,
     h2,
@@ -11,6 +17,7 @@
     h4,
     th {
       @apply mb-3 text-foreground;
+      letter-spacing: -0.02em;
     }
 
     h3 {
@@ -78,6 +85,12 @@
 
     blockquote {
       @apply border-s-accent/80 wrap-break-word opacity-80;
+      quotes: none;
+
+      p::before,
+      p::after {
+        content: none;
+      }
     }
 
     details {
@@ -98,6 +111,7 @@
     @apply flex border bg-(--shiki-light-bg) text-(--shiki-light) outline-border [&_span]:text-(--shiki-light);
     font-family: var(--font-mono);
     font-size: 0.875em;
+    overflow-x: auto;
   }
 
   html[data-theme="dark"] .astro-code {

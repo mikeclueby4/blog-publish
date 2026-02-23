@@ -40,8 +40,8 @@ These files are **ours** — do not overwrite from upstream without re-applying 
 | `src/components/Datetime.astro` | Props renamed `date`/`updated` |
 | `src/layouts/Layout.astro` | `noindex` prop, canonical passed from frontmatter, two `<Font>` preload tags |
 | `astro.config.ts` | `experimental.fonts`: Google Sans Flex + Geist Mono (not stock IBM Plex Mono) |
-| `src/styles/global.css` | `--font-app`, `--font-mono` variables; `body` font-size: 1.125rem |
-| `src/styles/typography.css` | `code` and `.astro-code` use `--font-mono` at `0.875em` |
+| `src/styles/global.css` | `--font-app`, `--font-mono` variables; `body` font-size: 1.125rem; dark mode palette |
+| `src/styles/typography.css` | fonts, letter-spacing, line-height, blockquote quotes, code overflow |
 
 ---
 
@@ -119,19 +119,12 @@ All call sites updated to pass the full post object instead of `(id, filePath)`.
 
 Frontmatter destructuring updated throughout. Key additions:
 
-**Two-column sticky ToC sidebar:**
-```
-┌──────────────┬──────────────────────────────────┐
-│  ToC         │  Article content                 │
-│  (220px)     │  (1fr)                           │
-│  sticky      │                                  │
-│  top: 2rem   │                                  │
-└──────────────┴──────────────────────────────────┘
-```
-- CSS grid: `grid-template-columns: 220px 1fr`
+**Fixed-position ToC sidebar (left gutter):**
 - ToC reads `headings` from `render()`, filters `depth <= 3`
-- `position: sticky; top: 2rem; align-self: start`
-- Collapses to single column below `768px`
+- Article (`post-main`) is independently centered with `margin-inline: auto; max-width: 48rem` — aligns with the site header, no grid involved
+- ToC is `position: fixed` in the viewport left gutter, only shown at ≥1280px where gutter is wide enough (≥256px for a 200px ToC + 2rem gap)
+- `left: max(1rem, calc((100vw - 48rem) / 2 - 200px - 2rem))` — tracks article left edge at any viewport width
+- Scrolls independently with `max-height: calc(100vh - 6rem); overflow-y: auto`
 
 **Draft banner:**
 - When `BLOG_PREVIEW === "true"` and `post.data.draft === true`, renders a purple banner above the article
@@ -183,10 +176,33 @@ AstroPaper ships with a single `IBM Plex Mono` font applied globally. We replace
 
 **`src/styles/typography.css`**:
 - Inline `code` rule gains `font-family: var(--font-mono); font-size: 0.875em`
-- `.astro-code` (fenced code blocks) gains the same two rules
+- `.astro-code` (fenced code blocks) gains the same rules plus `overflow-x: auto` (prevents wide code fences from breaking the page layout)
 - Font size expressed as `em` so it scales proportionally if surrounding prose size changes
 
 When pulling a future AstroPaper update, do **not** overwrite the fonts array in `astro.config.ts` or the font variable names in `global.css` / `typography.css`.
+
+### 17. Dark mode colour palette
+
+**`src/styles/global.css`** — `html[data-theme="dark"]` block replaced to match the live Hashnode site:
+
+| Variable | Value | Note |
+|---|---|---|
+| `--background` | `#020617` | slate-950 |
+| `--foreground` | `#f8fafc` | slate-50 |
+| `--accent` | `#70a29e` | muted teal |
+| `--muted` | `#0f172a` | slate-900, box backgrounds |
+| `--border` | `#1e293b` | slate-800, box borders |
+
+Light mode colours are untouched (to be revisited separately).
+
+### 18. Prose typography refinements
+
+**`src/styles/typography.css`** — inside `.app-prose`:
+
+- `letter-spacing: -0.011em` (mobile) / `-0.014em` at `≥640px` — matches Hashnode's compiled prose CSS
+- Headings `h1–h4`: `letter-spacing: -0.02em`
+- `line-height: 1.618` (golden ratio; Hashnode default, tighter than Tailwind Typography's 1.75)
+- Blockquotes: `quotes: none` + `p::before, p::after { content: none }` — removes Tailwind Typography's decorative smartquotes
 
 ---
 
